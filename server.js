@@ -1,40 +1,21 @@
 const express = require('express')
 const dotenv = require('dotenv')
+const bootcamperRouter = require('./router/bootcamper')
+const logger = require('./middleware/logger')
+
+// extract morgan middleware
+const { morganLogger } = logger
 
 // load env vars
-
 dotenv.config({ path: './config/.env' })
 
+// create express app
 const app = express()
 
-app.get('/api/v1/bootcamps', function (req, res) {
-    res.status(200).json({ success: true, msg: 'Show all bootcamps' })
-})
+app.use(morganLogger)
 
-app.get('/api/v1/bootcamps/:id', function (req, res) {
-    res.status(200).json({
-        success: true,
-        msg: `Get a bootcamp ${req.params.id}`,
-    })
-})
-
-app.post('/api/v1/bootcamps', function (req, res) {
-    res.status(201).json({ success: true, msg: 'Create new bootcamp' })
-})
-
-app.put('/api/v1/bootcamps/:id', function (req, res) {
-    res.status(200).json({
-        success: true,
-        msg: `Update a bootcamp ${req.params.id}`,
-    })
-})
-
-app.delete('/api/v1/bootcamps/:id', function (req, res) {
-    res.status(200).json({
-        success: true,
-        msg: `Delete a bootcamp ${req.params.id}`,
-    })
-})
+// register bootcamp router
+app.use('/api/v1/bootcamps', bootcamperRouter)
 
 const PORT = process.env.PORT || 3500
 
@@ -44,5 +25,7 @@ app.listen(PORT, (error) => {
     if (error) {
         console.error('An error occurs', error)
     }
-    console.log(`server running in ${ENV} mode on ${PORT} ....`)
+    console.log(
+        `server running in ${ENV} mode on ${PORT} ....`
+    )
 })
