@@ -2,14 +2,14 @@ const morgan = require('morgan')
 const fs = require('fs')
 const path = require('path')
 
-const accessLogStream = fs.createWriteStream(
+const httpStream = fs.createWriteStream(
     path.join(__dirname, '../access.log')
 )
 
-const morganLogger = morgan('short', {
-    stream: accessLogStream,
+const httpLogger = morgan('short', {
+    stream: httpStream,
 })
 
 module.exports = {
-    morganLogger,
+    httpLogger,
 }
