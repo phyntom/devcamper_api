@@ -5,6 +5,10 @@ const dbConnect = async () => {
         process.env.MONGO_URI,
         {
             useUnifiedTopology: true,
+            maxPoolSize: 50,
+            minPoolSize: 5,
+            serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+            socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
         }
     )
     console.log(

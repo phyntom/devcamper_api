@@ -17,6 +17,9 @@ dbConnect()
 // create express app
 const app = express()
 
+// body parser
+app.use(express.json())
+
 app.use(httpLogger)
 
 // register bootcamp router
