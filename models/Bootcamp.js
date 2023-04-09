@@ -1,4 +1,6 @@
 const mongoose = require('mongoose')
+const slugify = require('slugify')
+const geocoder = require('../utils/geocoder')
 const { Schema } = mongoose
 
 const bootCampSchema = new Schema({
@@ -15,7 +17,7 @@ const bootCampSchema = new Schema({
     slug: String,
     description: {
         type: String,
-        require: [true, 'Please add a description'],
+        required: [true, 'Please add a description'],
         maxlength: [
             500,
             'Description can not be more than 500 characters',
@@ -65,23 +67,29 @@ const bootCampSchema = new Schema({
     },
     careers: {
         type: [String],
-        required: true,
-        enum: [
-            'Web Development',
-            'Mobile Development',
-            'UI/UX',
-            'Data Science',
-            'Business',
-            'Other',
-        ],
+        enum: {
+            values: [
+                'Web Development',
+                'Mobile Development',
+                'UI/UX',
+                'Data Science',
+                'Business',
+                'Other',
+            ],
+            message: '{VALUE} is not supported',
+        },
+        validate: {
+            validator: (v) => {
+                return v.length > 0
+            },
+            message: (props) =>
+                `${props.path} is required and cannot be empty !!`,
+        },
     },
     averageRating: {
         type: Number,
         min: [1, 'Rating must be at least 1'],
-        max: [
-            10,
-            'Rating must can not be more than 10',
-        ],
+        max: [10, 'Rating must can not be more than 10'],
     },
     averageCost: {
         type: Number,
@@ -112,7 +120,27 @@ const bootCampSchema = new Schema({
     },
 })
 
-module.exports = mongoose.model(
-    'Bootcamp',
-    bootCampSchema
-)
+bootCampSchema.pre('save', function () {
+    this.slug = slugify(this.name, {
+        replacement: '_',
+        lower: true,
+    })
+})
+
+bootCampSchema.pre('save', async function (next) {
+    const loc = await geocoder.geocode(this.address)
+    this.location = {
+        type: 'Point',
+        coordinates: [loc[0].longitude, loc[0].latitude],
+        formattedAddress: loc[0].formattedAddress,
+        city: loc[0].city,
+        state: loc[0].stateCode,
+        zipcode: loc[0].zipcode,
+        country: loc[0].countryCode,
+    }
+    // do not save address in the db
+    this.address = undefined
+    next()
+})
+
+module.exports = mongoose.model('Bootcamp', bootCampSchema)

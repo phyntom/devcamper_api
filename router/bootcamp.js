@@ -1,5 +1,5 @@
 const express = require('express')
-const bootCampController = require('../controllers/bootcampsController')
+const bootCampController = require('../controllers/bootcampController')
 
 const router = express.Router()
 

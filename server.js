@@ -1,12 +1,12 @@
 const express = require('express')
 const dotenv = require('dotenv')
-const bootcamperRouter = require('./router/bootcamper')
-const colors = require('colors')
-const logger = require('./middleware/logger')
+const bootcamperRouter = require('./router/bootcamp')
 const dbConnect = require('./config/dbConnect')
-
+const colors = require('colors')
 // extract morgan middleware
-const { httpLogger } = logger
+const { httpLogger } = require('./middleware/logger')
+
+const { errorHandler } = require('./middleware/error')
 
 // load env vars
 dotenv.config({ path: './config/.env' })
@@ -24,6 +24,8 @@ app.use(httpLogger)
 
 // register bootcamp router
 app.use('/api/v1/bootcamps', bootcamperRouter)
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3500
 
