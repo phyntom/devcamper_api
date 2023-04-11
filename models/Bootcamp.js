@@ -9,19 +9,13 @@ const bootCampSchema = new Schema({
         required: [true, 'Please add bootcamp name'],
         unique: true,
         trim: true,
-        maxLength: [
-            50,
-            'Name can not be more than 50 characters',
-        ],
+        maxLength: [50, 'Name can not be more than 50 characters'],
     },
     slug: String,
     description: {
         type: String,
         required: [true, 'Please add a description'],
-        maxlength: [
-            500,
-            'Description can not be more than 500 characters',
-        ],
+        maxlength: [500, 'Description can not be more than 500 characters'],
     },
     website: {
         type: String,
@@ -39,10 +33,7 @@ const bootCampSchema = new Schema({
     },
     phone: {
         type: String,
-        maxLength: [
-            20,
-            'Phone number cannot be more than 20 characters',
-        ],
+        maxLength: [20, 'Phone number cannot be more than 20 characters'],
     },
     address: {
         type: String,
@@ -82,8 +73,7 @@ const bootCampSchema = new Schema({
             validator: (v) => {
                 return v.length > 0
             },
-            message: (props) =>
-                `${props.path} is required and cannot be empty !!`,
+            message: (props) => `${props.path} is required and cannot be empty !!`,
         },
     },
     averageRating: {
