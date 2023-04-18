@@ -1,7 +1,13 @@
 const express = require('express')
 const bootCampController = require('../controllers/bootcampController')
 
+// includes other resources routers
+const courseRouter = require('./course')
+
 const router = express.Router()
+
+// Re-route into the resources router
+router.use('/:bootcampId/courses', courseRouter)
 
 const {
     getBootcamp,

@@ -6,6 +6,7 @@ const color = require('colors')
 dotenv.config({ path: './config/.env' })
 
 const Bootcamp = require('./models/Bootcamp')
+const Course = require('./models/Course')
 
 mongoose.connect(process.env.MONGO_URI, {
     useUnifiedTopology: true,
@@ -20,15 +21,14 @@ mongoose.connect(process.env.MONGO_URI, {
 const importData = async () => {
     try {
         const bootCamps = await JSON.parse(
-            fs.readFileSync(
-                `${__dirname}/data/bootcamps.json`,
-                'utf-8'
-            )
+            fs.readFileSync(`${__dirname}/data/bootcamps.json`, 'utf-8')
+        )
+        const course = await JSON.parse(
+            fs.readFileSync(`${__dirname}/data/course.json`, 'utf-8')
         )
         await Bootcamp.create(bootCamps)
-        console.log(
-            `Date imported successfully ...`.green.inverse
-        )
+        await Course.create(course)
+        console.log(`Date imported successfully ...`.green.inverse)
         process.exit()
     } catch (err) {
         console.error(`${err}`.red)
@@ -39,6 +39,7 @@ const importData = async () => {
 const deleteData = async () => {
     try {
         await Bootcamp.deleteMany()
+        await Course.deleteMany()
         console.log(`Data deleted successfully ...`.green)
         process.exit()
     } catch (err) {
@@ -47,14 +48,8 @@ const deleteData = async () => {
     }
 }
 
-if (
-    process.argv[2] === '-i' ||
-    process.argv[2] === '--import'
-) {
+if (process.argv[2] === '-i' || process.argv[2] === '--import') {
     importData()
-} else if (
-    process.argv[2] === '-d' ||
-    process.argv[2] === '--delete'
-) {
+} else if (process.argv[2] === '-d' || process.argv[2] === '--delete') {
     deleteData()
 }

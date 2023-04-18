@@ -1,6 +1,7 @@
 const express = require('express')
 const dotenv = require('dotenv')
-const bootcamperRouter = require('./router/bootcamp')
+const bootcampRouter = require('./router/bootcamp')
+const courseRouter = require('./router/course')
 const dbConnect = require('./config/dbConnect')
 const colors = require('colors')
 // extract morgan middleware
@@ -23,7 +24,8 @@ app.use(express.json())
 app.use(httpLogger)
 
 // register bootcamp router
-app.use('/api/v1/bootcamps', bootcamperRouter)
+app.use('/api/v1/bootcamps', bootcampRouter)
+app.use('/api/v1/courses', courseRouter)
 
 app.use(errorHandler)
 
@@ -36,10 +38,7 @@ const server = app.listen(PORT, (error) => {
     if (error) {
         console.error('An error occurs', error)
     }
-    console.log(
-        `Server running in ${ENV} mode on ${PORT} ....`
-            .yellow.bold
-    )
+    console.log(`Server running in ${ENV} mode on ${PORT} ....`.yellow.bold)
 })
 // handle unhandledRejection promise rejections
 process.on('unhandledRejection', (err, promise) => {

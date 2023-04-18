@@ -3,8 +3,8 @@ const ErrorReponse = require('../utils/ErrorResponse')
 const asyncHanlder = require('../middleware/async')
 const geocoder = require('../utils/geocoder')
 
-// @desc get all bootcamps
-// @route GET /api/v1/bootcamps
+// @desc    get all bootcamps
+// @route   GET /api/v1/bootcamps
 const getBootcamps = asyncHanlder(async (req, res, next) => {
     // copy req.query
     const reqQuery = { ...req.query }
@@ -40,10 +40,13 @@ const getBootcamps = asyncHanlder(async (req, res, next) => {
     // pagination
 
     const page = parseInt(req?.query?.page, 10) || 1
-    const limit = parseInt(req?.query?.limit, 10) || 1
+    const limit = parseInt(req?.query?.limit, 10) || 25
     const startIndex = (page - 1) * limit
     const endIndex = page * limit
+
     const total = await Bootcamp.countDocuments()
+
+    const totalPages = Math.ceil(total / limit)
 
     query.skip(startIndex).limit(limit)
 
@@ -52,31 +55,33 @@ const getBootcamps = asyncHanlder(async (req, res, next) => {
 
     const pagination = {}
 
-    // in case we still have records after current endIndex
-    if (endIndex < total) {
-        pagination.next = {
-            page: page + 1,
-            limit,
+    if (bootcamps.length > 0) {
+        pagination.totalPages = totalPages
+        pagination.limit = limit
+        // in case we still have records after current endIndex
+        if (endIndex < total) {
+            pagination.next = {
+                page: page + 1,
+            }
         }
-    }
-    // in case we moved to the next startIndex
-    if (startIndex > 0) {
-        pagination.prev = {
-            page: page - 1,
-            limit,
+        // in case we moved to the next startIndex
+        if (startIndex > 0) {
+            pagination.prev = {
+                page: page - 1,
+            }
         }
     }
     res.status(200).json({
         success: true,
         count: bootcamps.length,
-        pagination: bootcamps.length > 0 ? pagination : {},
+        pagination,
         data: bootcamps,
     })
 })
 
-// @desc get all bootcamps
-// @route GET /api/v1/bootcamps/:id
-// access Public
+// @desc    get all bootcamps
+// @route   GET /api/v1/bootcamps/:id
+// access   Public
 const getBootcamp = asyncHanlder(async (req, res, next) => {
     const bootcamp = await Bootcamp.findById(req.params.id)
     if (!bootcamp) {
@@ -101,9 +106,9 @@ const createBootcamp = asyncHanlder(async (req, res, next) => {
     })
 })
 
-// @desc update a given bootcamp
-// @route PUT /api/v1/bootcamps/
-// access Private
+// @desc    update a given bootcamp
+// @route   PUT /api/v1/bootcamps/
+// access   Private
 const updateBootcamp = asyncHanlder(async (req, res, next) => {
     const updatedBootcamp = await Bootcamp.findByIdAndUpdate(
         req.params.id,
