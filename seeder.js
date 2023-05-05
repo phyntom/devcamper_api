@@ -23,9 +23,7 @@ const importData = async () => {
         const bootCamps = await JSON.parse(
             fs.readFileSync(`${__dirname}/data/bootcamps.json`, 'utf-8')
         )
-        const course = await JSON.parse(
-            fs.readFileSync(`${__dirname}/data/course.json`, 'utf-8')
-        )
+        const course = await JSON.parse(fs.readFileSync(`${__dirname}/data/course.json`, 'utf-8'))
         await Bootcamp.create(bootCamps)
         await Course.create(course)
         console.log(`Date imported successfully ...`.green.inverse)
@@ -52,4 +50,7 @@ if (process.argv[2] === '-i' || process.argv[2] === '--import') {
     importData()
 } else if (process.argv[2] === '-d' || process.argv[2] === '--delete') {
     deleteData()
+} else {
+    console.log('unknown or missing options | provide --import | --delete | -d | -i options')
+    process.exit(0)
 }

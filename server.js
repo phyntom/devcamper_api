@@ -6,8 +6,8 @@ const dbConnect = require('./config/dbConnect')
 const colors = require('colors')
 // extract morgan middleware
 const { httpLogger } = require('./middleware/logger')
-
 const { errorHandler } = require('./middleware/error')
+const fileupload = require('express-fileupload')
 
 // load env vars
 dotenv.config({ path: './config/.env' })
@@ -18,6 +18,12 @@ dbConnect()
 // create express app
 const app = express()
 
+// use fileupload middleware from express-fileupload
+app.use(
+    fileupload({
+        limits: { fileSize: 50 * 1024 * 1024 },
+    })
+)
 // body parser
 app.use(express.json())
 

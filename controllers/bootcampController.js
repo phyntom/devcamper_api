@@ -1,7 +1,10 @@
 const Bootcamp = require('../models/Bootcamp')
+const mongoose = require('mongoose')
 const ErrorReponse = require('../utils/ErrorResponse')
 const asyncHanlder = require('../middleware/async')
 const geocoder = require('../utils/geocoder')
+const _ = require('lodash')
+const ObjectId = mongoose.Types.ObjectId
 
 // @desc    get all bootcamps
 // @route   GET /api/v1/bootcamps
@@ -18,12 +21,12 @@ const getBootcamps = asyncHanlder(async (req, res, next) => {
     let queryString = JSON.stringify(reqQuery)
 
     // replace with $ for query filter for operators
-    queryString = queryString.replace(
-        /\b(gt|gte|lt|lte|in)\b/g,
-        (match) => `$${match}`
-    )
+    queryString = queryString.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`)
 
-    let query = Bootcamp.find(JSON.parse(queryString))
+    let query = Bootcamp.find(JSON.parse(queryString)).populate({
+        path: 'courses',
+        select: 'title desription',
+    })
 
     if (req?.query?.select) {
         const fields = req.query.select.split(',').join(' ')
@@ -85,7 +88,7 @@ const getBootcamps = asyncHanlder(async (req, res, next) => {
 const getBootcamp = asyncHanlder(async (req, res, next) => {
     const bootcamp = await Bootcamp.findById(req.params.id)
     if (!bootcamp) {
-        next(new ErrorReponse(`Cannot find bootcamp with id ${req.params.id}`, 404))
+        return next(new ErrorReponse(`Cannot find bootcamp with id ${req.params.id}`, 404))
     }
     res.status(200).json({
         success: true,
@@ -110,15 +113,11 @@ const createBootcamp = asyncHanlder(async (req, res, next) => {
 // @route   PUT /api/v1/bootcamps/
 // access   Private
 const updateBootcamp = asyncHanlder(async (req, res, next) => {
-    const updatedBootcamp = await Bootcamp.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        {
-            runValidators: true,
-        }
-    )
+    const updatedBootcamp = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, {
+        runValidators: true,
+    })
     if (!updatedBootcamp) {
-        next(new ErrorReponse(`Cannot find bootcamp with id ${req.params.id}`, 404))
+        return next(new ErrorReponse(`Cannot find bootcamp with id ${req.params.id}`, 404))
     }
     res.status(200).json({
         success: true,
@@ -129,31 +128,18 @@ const updateBootcamp = asyncHanlder(async (req, res, next) => {
 // @desc delete a given bootcamp
 // @route POST /api/v1/bootcamps/
 // access Private
-const deleteBootcamp = async (req, res, next) => {
-    try {
-        const updatedBootcamp = await Bootcamp.findByIdAndDelete(
-            req.params.id,
-            req.body,
-            {
-                runValidators: true,
-            }
-        )
-        if (!updatedBootcamp) {
-            next(
-                new ErrorReponse(
-                    `Cannot find bootcamp with id ${req.params.id}`,
-                    404
-                )
-            )
-        }
-        res.status(200).json({
-            success: true,
-            data: {},
-        })
-    } catch (error) {
-        next(err)
+const deleteBootcamp = asyncHanlder(async (req, res, next) => {
+    const { id } = req.params
+    const bootcamp = await Bootcamp.findById(req.params.id)
+    if (_.isEmpty(bootcamp)) {
+        return next(new ErrorReponse(`Cannot find bootcamp with id ${id}`, 404))
     }
-}
+    await bootcamp.deleteOne()
+    res.status(200).json({
+        success: true,
+        data: {},
+    })
+})
 // @desc get bootcaps with a radius
 // @route GET /api/v1/bootcamps/radius/:zipcode/:distance
 // access Private
@@ -182,9 +168,27 @@ const getBootCampsInRadius = async (req, res, next) => {
             data: bootCamps,
         })
     } catch (error) {
-        next(err)
+        next(error)
     }
 }
+
+// @desc Upload photo for a given bootcamp
+// @route PUT /api/v1/bootcamps/:id/photo
+// access Private
+const bootcampFileUpload = asyncHanlder(async (req, res, next) => {
+    const bootcamp = Bootcamp.findById(req.params.id)
+    if (_.isEmpty(bootcamp)) {
+        return next(new ErrorReponse(`Bootcamp not found with id of ${req.params.id}`, 404))
+    }
+    if (!req.files) {
+        return next(new ErrorReponse(`Please upload a file 😛`, 400))
+    }
+    res.json({
+        success: true,
+        count: bootCamps.length,
+        data: bootCamps,
+    })
+})
 
 module.exports = {
     getBootcamps,
@@ -193,4 +197,5 @@ module.exports = {
     updateBootcamp,
     deleteBootcamp,
     getBootCampsInRadius,
+    bootcampFileUpload,
 }

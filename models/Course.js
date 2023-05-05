@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const Bootcamp = require('./Bootcamp')
 
 const { Schema } = mongoose
 
@@ -20,8 +21,12 @@ const CourseSchema = new Schema({
         required: [true, 'please add a tuition course'],
     },
     minimumRequiredSkills: {
-        type: String,
-        enum: ['beginner', 'intermidiate', 'advanced'],
+        type: [String],
+        enum: {
+            values: ['beginner', 'intermidiate', 'advanced'],
+            message: 'value is not supported',
+            required: true,
+        },
     },
     scholarshipAvailable: {
         type: Boolean,
@@ -36,6 +41,36 @@ const CourseSchema = new Schema({
         ref: 'Bootcamp',
         required: true,
     },
+})
+
+CourseSchema.statics.getAverageCost = async function (bootcampId) {
+    const average = await this.aggregate([
+        {
+            $match: { bootcamp: bootcampId },
+        },
+        {
+            $group: {
+                _id: '$bootcamp',
+                averageCost: { $avg: '$tuition' },
+            },
+        },
+    ])
+    try {
+        let bootcamp = await Bootcamp.findByIdAndUpdate(bootcampId, {
+            averageCost: Math.round(average[0].averageCost),
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+CourseSchema.post('save', async function () {
+    await this.constructor.getAverageCost(this.bootcamp)
+})
+
+CourseSchema.pre('deleteOne', async function (next) {
+    await this.constructor.getAverageCost(this.bootcamp)
+    next()
 })
 
 module.exports = mongoose.model('Course', CourseSchema)

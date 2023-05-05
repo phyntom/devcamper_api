@@ -16,6 +16,7 @@ const {
     deleteBootcamp,
     updateBootcamp,
     getBootCampsInRadius,
+    bootcampFileUpload,
 } = bootCampController
 
 // using chainable route handlers
@@ -29,5 +30,7 @@ router.get('/radius/:zipcode/:distance', getBootCampsInRadius)
 router.put('/:id', updateBootcamp)
 
 router.delete('/:id', deleteBootcamp)
+
+router.put('/:id/photo', bootcampFileUpload)
 
 module.exports = router

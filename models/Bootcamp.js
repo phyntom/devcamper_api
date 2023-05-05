@@ -3,112 +3,119 @@ const slugify = require('slugify')
 const geocoder = require('../utils/geocoder')
 const { Schema } = mongoose
 
-const BootcampSchema = new Schema({
-    name: {
-        type: String,
-        required: [true, 'Please add bootcamp name'],
-        unique: true,
-        trim: true,
-        maxLength: [50, 'Name can not be more than 50 characters'],
-    },
-    slug: String,
-    description: {
-        type: String,
-        required: [true, 'Please add a description'],
-        maxlength: [500, 'Description can not be more than 500 characters'],
-    },
-    website: {
-        type: String,
-        match: [
-            /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
-            'Please use a valid URL with HTTP or HTTPS',
-        ],
-    },
-    email: {
-        type: String,
-        match: [
-            /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-            'Please add a valid email',
-        ],
-    },
-    phone: {
-        type: String,
-        maxLength: [20, 'Phone number cannot be more than 20 characters'],
-    },
-    address: {
-        type: String,
-        required: [true, 'Please add an address'],
-    },
-    location: {
-        // GeoJSON Point
-        type: {
+const BootcampSchema = new Schema(
+    {
+        name: {
             type: String,
-            enum: ['Point'],
+            required: [true, 'Please add bootcamp name'],
+            unique: true,
+            trim: true,
+            maxLength: [50, 'Name can not be more than 50 characters'],
         },
-        coordinates: {
-            type: [Number],
-            index: '2dsphere',
+        slug: String,
+        description: {
+            type: String,
+            required: [true, 'Please add a description'],
+            maxlength: [500, 'Description can not be more than 500 characters'],
         },
-        formattedAddress: String,
-        street: String,
-        city: String,
-        state: String,
-        zipcode: String,
-        country: String,
-    },
-    careers: {
-        type: [String],
-        enum: {
-            values: [
-                'Web Development',
-                'Mobile Development',
-                'UI/UX',
-                'Data Science',
-                'Business',
-                'Other',
+        website: {
+            type: String,
+            match: [
+                /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
+                'Please use a valid URL with HTTP or HTTPS',
             ],
-            message: '{VALUE} is not supported',
         },
-        validate: {
-            validator: (v) => {
-                return v.length > 0
+        email: {
+            type: String,
+            match: [
+                /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+                'Please add a valid email',
+            ],
+        },
+        phone: {
+            type: String,
+            maxLength: [20, 'Phone number cannot be more than 20 characters'],
+        },
+        address: {
+            type: String,
+            required: [true, 'Please add an address'],
+        },
+        location: {
+            // GeoJSON Point
+            type: {
+                type: String,
+                enum: ['Point'],
             },
-            message: (props) => `${props.path} is required and cannot be empty !!`,
+            coordinates: {
+                type: [Number],
+                index: '2dsphere',
+            },
+            formattedAddress: String,
+            street: String,
+            city: String,
+            state: String,
+            zipcode: String,
+            country: String,
+        },
+        careers: {
+            type: [String],
+            enum: {
+                values: [
+                    'Web Development',
+                    'Mobile Development',
+                    'UI/UX',
+                    'Data Science',
+                    'Business',
+                    'Other',
+                ],
+                message: '{VALUE} is not supported',
+            },
+            validate: {
+                validator: (v) => {
+                    return v.length > 0
+                },
+                message: (props) =>
+                    `${props.path} is required and cannot be empty !!`,
+            },
+        },
+        averageRating: {
+            type: Number,
+            min: [1, 'Rating must be at least 1'],
+            max: [10, 'Rating must can not be more than 10'],
+        },
+        averageCost: {
+            type: Number,
+        },
+        photo: {
+            type: String,
+            default: 'no-photo.jpg',
+        },
+        housing: {
+            type: Boolean,
+            default: false,
+        },
+        jobAssistance: {
+            type: Boolean,
+            default: false,
+        },
+        jobGuarantee: {
+            type: Boolean,
+            default: false,
+        },
+        acceptGi: {
+            type: Boolean,
+            default: false,
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now,
         },
     },
-    averageRating: {
-        type: Number,
-        min: [1, 'Rating must be at least 1'],
-        max: [10, 'Rating must can not be more than 10'],
-    },
-    averageCost: {
-        type: Number,
-    },
-    photo: {
-        type: String,
-        default: 'no-photo.jpg',
-    },
-    housing: {
-        type: Boolean,
-        default: false,
-    },
-    jobAssistance: {
-        type: Boolean,
-        default: false,
-    },
-    jobGuarantee: {
-        type: Boolean,
-        default: false,
-    },
-    acceptGi: {
-        type: Boolean,
-        default: false,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-})
+    {
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
+    }
+)
 
 BootcampSchema.pre('save', function () {
     this.slug = slugify(this.name, {
@@ -131,6 +138,19 @@ BootcampSchema.pre('save', async function (next) {
     // do not save address in the db
     this.address = undefined
     next()
+})
+// cascade delete courses when bootcamp is deleted
+BootcampSchema.pre('deleteOne', { document: true }, async function (next) {
+    console.log(`removing all courses associated with bootcamp - ${this.name}`)
+    await this.model('Course').deleteMany({ bootcamp: this._id })
+    next()
+})
+// bootcamp virtuals to get courses associated with bootcamp
+BootcampSchema.virtual('courses', {
+    ref: 'Course',
+    localField: '_id',
+    foreignField: 'bootcamp',
+    justOne: false,
 })
 
 module.exports = mongoose.model('Bootcamp', BootcampSchema)
