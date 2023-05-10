@@ -1,0 +1,4 @@
+::ffff:127.0.0.1 - POST /api/v1/auth/login HTTP/1.1 200 198 - 272.309 ms
+::ffff:127.0.0.1 - PUT /api/v1/bootcamps/5d725a1b7b292f5f8ceff788/photo HTTP/1.1 401 66 - 1.633 ms
+::ffff:127.0.0.1 - PUT /api/v1/bootcamps/5d725a1b7b292f5f8ceff788/photo HTTP/1.1 401 66 - 0.840 ms
+::ffff:127.0.0.1 - PUT /api/v1/bootcamps/5d725a1b7b292f5f8ceff788/photo HTTP/1.1 403 80 - 160.710 ms
