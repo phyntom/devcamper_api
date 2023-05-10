@@ -1,5 +1,6 @@
 const express = require('express')
 const bootCampController = require('../controllers/bootcampController')
+const { protect, authorize } = require('../middleware/authenticate')
 
 // includes other resources routers
 const courseRouter = require('./course')
@@ -20,17 +21,17 @@ const {
 } = bootCampController
 
 // using chainable route handlers
-router.route('/').get(getBootcamps).post(createBootcamp)
+router.route('/').get(getBootcamps).post(protect, authorize('admin', 'publisher'), createBootcamp)
 
 // using normal express router without chainable route
 router.get('/:id', getBootcamp)
 
 router.get('/radius/:zipcode/:distance', getBootCampsInRadius)
 
-router.put('/:id', updateBootcamp)
+router.put('/:id', protect, authorize('admin', 'publisher'), updateBootcamp)
 
-router.delete('/:id', deleteBootcamp)
+router.delete('/:id', protect, authorize('admin', 'publisher'), deleteBootcamp)
 
-router.put('/:id/photo', bootcampFileUpload)
+router.put('/:id/photo', protect, authorize('admin', 'publisher'), bootcampFileUpload)
 
 module.exports = router

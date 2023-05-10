@@ -1,13 +1,16 @@
+const path = require('path')
 const express = require('express')
 const dotenv = require('dotenv')
 const bootcampRouter = require('./router/bootcamp')
 const courseRouter = require('./router/course')
+const registerRouter = require('./router/authentication')
 const dbConnect = require('./config/dbConnect')
 const colors = require('colors')
 // extract morgan middleware
 const { httpLogger } = require('./middleware/logger')
 const { errorHandler } = require('./middleware/error')
 const fileupload = require('express-fileupload')
+const cookieParser = require('cookie-parser')
 
 // load env vars
 dotenv.config({ path: './config/.env' })
@@ -17,21 +20,29 @@ dbConnect()
 
 // create express app
 const app = express()
-
 // use fileupload middleware from express-fileupload
 app.use(
     fileupload({
-        limits: { fileSize: 50 * 1024 * 1024 },
+        createParentPath: true,
+        useTempFiles: true,
+        tempFileDir: '/tmp/',
+        limits: { fileSize: process.env.MAX_UPLOAD_LIMITS },
+        debug: true,
     })
 )
 // body parser
 app.use(express.json())
+
+app.use(cookieParser())
+
+app.use(express.static(path.join(__dirname, 'images')))
 
 app.use(httpLogger)
 
 // register bootcamp router
 app.use('/api/v1/bootcamps', bootcampRouter)
 app.use('/api/v1/courses', courseRouter)
+app.use('/api/v1/auth', registerRouter)
 
 app.use(errorHandler)
 

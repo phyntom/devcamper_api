@@ -3,26 +3,41 @@ const Bootcamp = require('../models/Bootcamp')
 const ErrorResponse = require('../utils/ErrorResponse')
 const asyncHanlder = require('../middleware/async')
 const _ = require('lodash')
+const paginate = require('../utils/paginate')
 
 // @desc      get all courses
 // @route     GET /api/v1/courses
 // @route     GET /api/v1/bootcamps/:bootcampId/courses
 // @access    Public
 const getCourses = asyncHanlder(async (req, res, next) => {
+    let { page, limit } = req.query
+
     let courses = []
     if (req.params.bootcampId) {
         courses = await Course.find({ bootcamp: req.params.bootcampId })
+        res.status(200).json({
+            success: true,
+            count: courses.length,
+            data: courses,
+        })
     } else {
-        courses = await Course.find().populate({
-            path: 'bootcamp',
-            select: 'name description',
+        const { count, pagination, results } = await paginate(
+            Course,
+            {
+                path: 'bootcamp',
+                select: 'name description',
+            },
+            req,
+            page,
+            limit
+        )
+        res.status(200).json({
+            success: true,
+            count: count,
+            pagination,
+            data: results,
         })
     }
-    res.status(200).json({
-        success: true,
-        count: courses.length,
-        data: courses,
-    })
 })
 //@desc     get single course by id
 //@route    GET /api/v1/courses/:id

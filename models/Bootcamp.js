@@ -27,10 +27,7 @@ const BootcampSchema = new Schema(
         },
         email: {
             type: String,
-            match: [
-                /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-                'Please add a valid email',
-            ],
+            match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please add a valid email'],
         },
         phone: {
             type: String,
@@ -74,8 +71,7 @@ const BootcampSchema = new Schema(
                 validator: (v) => {
                     return v.length > 0
                 },
-                message: (props) =>
-                    `${props.path} is required and cannot be empty !!`,
+                message: (props) => `${props.path} is required and cannot be empty !!`,
             },
         },
         averageRating: {

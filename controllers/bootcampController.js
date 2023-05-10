@@ -5,80 +5,27 @@ const asyncHanlder = require('../middleware/async')
 const geocoder = require('../utils/geocoder')
 const _ = require('lodash')
 const ObjectId = mongoose.Types.ObjectId
+const path = require('path')
+const paginate = require('../utils/paginate')
 
 // @desc    get all bootcamps
 // @route   GET /api/v1/bootcamps
 const getBootcamps = asyncHanlder(async (req, res, next) => {
     // copy req.query
-    const reqQuery = { ...req.query }
-
-    // fields to exclude
-    const excludedFields = ['select', 'sort', 'page', 'limit']
-
-    // loop over excludedFields and delete them frp, reqQuery
-    excludedFields.forEach((param) => delete reqQuery[param])
-    // create query string
-    let queryString = JSON.stringify(reqQuery)
-
-    // replace with $ for query filter for operators
-    queryString = queryString.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`)
-
-    let query = Bootcamp.find(JSON.parse(queryString)).populate({
-        path: 'courses',
-        select: 'title desription',
-    })
-
-    if (req?.query?.select) {
-        const fields = req.query.select.split(',').join(' ')
-        query = query.select(fields)
-    }
-
-    if (req?.query?.sort) {
-        const sortBy = req.query.sort.split(',').join(' ')
-        query = query.sort(sortBy)
-    } else {
-        query = query.sort({ createdAt: -1 })
-    }
-
-    // pagination
-
-    const page = parseInt(req?.query?.page, 10) || 1
-    const limit = parseInt(req?.query?.limit, 10) || 25
-    const startIndex = (page - 1) * limit
-    const endIndex = page * limit
-
-    const total = await Bootcamp.countDocuments()
-
-    const totalPages = Math.ceil(total / limit)
-
-    query.skip(startIndex).limit(limit)
-
-    // execute query
-    const bootcamps = await query
-
-    const pagination = {}
-
-    if (bootcamps.length > 0) {
-        pagination.totalPages = totalPages
-        pagination.limit = limit
-        // in case we still have records after current endIndex
-        if (endIndex < total) {
-            pagination.next = {
-                page: page + 1,
-            }
-        }
-        // in case we moved to the next startIndex
-        if (startIndex > 0) {
-            pagination.prev = {
-                page: page - 1,
-            }
-        }
-    }
+    const { page, limit } = req.query
+    const { count, pagination, results } = await paginate(
+        Bootcamp,
+        { path: 'courses', select: 'title description' },
+        req.query,
+        page,
+        limit,
+        next
+    )
     res.status(200).json({
         success: true,
-        count: bootcamps.length,
+        count: count,
         pagination,
-        data: bootcamps,
+        data: results,
     })
 })
 
@@ -176,17 +123,33 @@ const getBootCampsInRadius = async (req, res, next) => {
 // @route PUT /api/v1/bootcamps/:id/photo
 // access Private
 const bootcampFileUpload = asyncHanlder(async (req, res, next) => {
-    const bootcamp = Bootcamp.findById(req.params.id)
+    let bootcamp = await Bootcamp.findById(req.params.id)
     if (_.isEmpty(bootcamp)) {
         return next(new ErrorReponse(`Bootcamp not found with id of ${req.params.id}`, 404))
     }
-    if (!req.files) {
+    if (!req.files || Object.keys(req.files).length === 0) {
         return next(new ErrorReponse(`Please upload a file 😛`, 400))
     }
-    res.json({
-        success: true,
-        count: bootCamps.length,
-        data: bootCamps,
+    // get the actual file
+    let photo = req.files.file
+    // check if the upload file is an image
+    if (!photo.mimetype.startsWith('image')) {
+        return next(new ErrorReponse(`Please upload an image 😛`, 404))
+    }
+
+    // create custom bootcamp image name
+    let createdFileName = `image_${bootcamp._id}${path.parse(photo.name).ext}`
+
+    photo.mv(process.env.UPLOAD_PATH + createdFileName, async function (err) {
+        if (err) {
+            return next(new ErrorReponse(`Problem with bootcamp photo upload`, 500))
+        }
+        await Bootcamp.findByIdAndUpdate(req.params.id, { photo: createdFileName })
+        res.json({
+            success: true,
+            msg: 'Bootcamp photo uploaded successfully 💥',
+            data: createdFileName,
+        })
     })
 })
 
